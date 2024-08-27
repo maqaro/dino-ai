@@ -1,0 +1,133 @@
+import pygame
+import math
+import random
+
+class Robot(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+
+        self.image = pygame.image.load("assets/character-1.png").convert_alpha()
+
+        original_width, original_height = self.image.get_size()
+        new_width = int(original_width * 2.5)
+        new_height = int(original_height * 2.5)
+        self.image = pygame.transform.scale(self.image, (new_width, new_height))
+        
+        self.rect = self.image.get_rect()
+        self.rect.center = (480, 360)
+
+        self.jumping = False
+        self.jump_height = 0
+
+    def jump(self):
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_SPACE]:
+            self.jumping = True
+
+    def gravity(self):
+        if self.jumping:
+            self.rect.y -= 10
+            self.jump_height += 10
+
+        if self.jump_height >= 100:
+            self.jumping = False
+            self.jump_height = 0
+
+        if not self.jumping:
+            self.rect.y += 10 
+
+        if self.rect.bottom >= 720:
+            self.rect.bottom = 720
+
+
+    def update(self):
+        self.jump()
+        self.gravity()
+
+
+class obstacle(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+
+        self.image = pygame.image.load("assets/obstacle-1.png").convert_alpha()
+
+        original_width, original_height = self.image.get_size()
+        new_width = int(original_width * 2.5)
+        new_height = int(original_height * 2.5)
+        self.image = pygame.transform.scale(self.image, (new_width, new_height))
+
+        self.rect = self.image.get_rect()
+        self.rect.center = (360, 360)
+
+
+    def move(self):
+        pass
+
+    def despawn(self):
+        self.kill()
+
+    def update(self):
+        pass
+
+class game:
+    def __init__(self):
+        pygame.init()
+        self.screen = pygame.display.set_mode((960, 720))
+        self.clock = pygame.time.Clock()
+        self.running = True
+        self.alive = True
+        self.player_group = pygame.sprite.GroupSingle(Robot())
+        self.obstacles = pygame.sprite.Group()
+        self.score = 0
+
+        pygame.display.set_icon(pygame.image.load("assets/character-1.png"))
+        pygame.display.set_caption("AI Runner")
+
+    def run(self):
+        while self.running:
+            self.clock.tick(60)
+            self.handle_events()
+            self.update()
+            self.draw()
+
+    def handle_collision(self):
+        # if self.player_group and pygame.sprite.spritecollide(self.player_group.sprite, self.obstacles, False):
+        #     self.player_group.empty()
+        #     self.obstacles.empty()
+        #     return False
+        # else:
+        #     return True
+        return True
+
+    def handle_events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                self.running = False
+
+            if not self.alive and event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_S:
+                    self.alive = True
+                    self.player_group.add(Robot())
+
+    def update(self):
+        if self.alive:
+            if len(self.obstacles) == 0:
+                self.obstacles.add(obstacle())
+
+            if len(self.player_group) < 1:
+                self.player_group.add(Robot())
+
+            self.player_group.update()
+            self.obstacles.update()
+            self.alive = self.handle_collision()
+
+    def draw(self):
+        self.screen.fill(('white'))
+
+        if self.alive:
+            self.player_group.draw(self.screen)
+            self.obstacles.draw(self.screen)
+            pygame.display.flip()
+
+game = game()
+game.run()
