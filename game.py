@@ -14,7 +14,7 @@ class Robot(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (new_width, new_height))
         
         self.rect = self.image.get_rect()
-        self.rect.center = (480, 360)
+        self.rect.center = (640, 360)
 
         self.jumping = False
         self.jump_height = 0
@@ -31,7 +31,7 @@ class Robot(pygame.sprite.Sprite):
             self.rect.y -= 8
             self.jump_height += 8
 
-        if self.jump_height >= 180:
+        if self.jump_height >= 160:
             self.jumping = False
             self.jump_height = 0
 
@@ -61,7 +61,7 @@ class obstacle(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (new_width, new_height))
 
         self.rect = self.image.get_rect()
-        self.rect.center = (1000, 680)
+        self.rect.center = (1280, 680)
 
         self.speed = 5
         self.scored = False
@@ -83,7 +83,7 @@ class obstacle(pygame.sprite.Sprite):
 class game:
     def __init__(self):
         pygame.init()
-        self.screen = pygame.display.set_mode((960, 720))
+        self.screen = pygame.display.set_mode((1280, 720))
         self.clock = pygame.time.Clock()
         self.running = True
         self.alive = True
@@ -146,7 +146,7 @@ class game:
 
             font = pygame.font.Font(None, 74)
             text = font.render(str(self.player_group.sprite.score), True, (0, 0, 0))
-            text_rect = text.get_rect(center=(480, 50))
+            text_rect = text.get_rect(center=(640, 50))
             self.screen.blit(text, text_rect)
 
             pygame.display.flip()
@@ -154,12 +154,12 @@ class game:
         else:
             font = pygame.font.Font(None, 74)
             text = font.render("You Died", True, (0, 0, 0))
-            text_rect = text.get_rect(center=(480, 360))
+            text_rect = text.get_rect(center=(640, 360))
             self.screen.blit(text, text_rect)
 
             font = pygame.font.Font(None, 74)
             text = font.render("Press S to start", True, (0, 0, 0))
-            text_rect = text.get_rect(center=(480, 420))
+            text_rect = text.get_rect(center=(640, 420))
             self.screen.blit(text, text_rect)
 
             pygame.display.flip()
