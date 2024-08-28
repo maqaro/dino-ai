@@ -64,6 +64,7 @@ class obstacle(pygame.sprite.Sprite):
         self.rect.center = (1000, 680)
 
         self.speed = 5
+        self.scored = False
 
     def move(self):
         self.rect.x -= self.speed
@@ -107,6 +108,12 @@ class game:
             return False
         else:
             return True
+        
+    def handle_score(self):
+        for obstacle in self.obstacles:
+            if not obstacle.scored and self.player_group.sprite.rect.left > obstacle.rect.right:
+                self.player_group.sprite.increase_score()
+                obstacle.scored = True
 
     def handle_events(self):
         for event in pygame.event.get():
@@ -128,14 +135,20 @@ class game:
 
             self.player_group.update()
             self.obstacles.update()
+            self.handle_score()
             self.alive = self.handle_collision()
 
     def draw(self):
         self.screen.fill(('white'))
-
         if self.alive:
             self.player_group.draw(self.screen)
             self.obstacles.draw(self.screen)
+
+            font = pygame.font.Font(None, 74)
+            text = font.render(str(self.player_group.sprite.score), True, (0, 0, 0))
+            text_rect = text.get_rect(center=(480, 50))
+            self.screen.blit(text, text_rect)
+
             pygame.display.flip()
 
         else:
