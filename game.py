@@ -14,7 +14,7 @@ class Robot(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (new_width, new_height))
         
         self.rect = self.image.get_rect()
-        self.rect.center = (640, 360)
+        self.rect.center = (240, 600)
 
         self.jumping = False
         self.jump_height = 0
@@ -23,7 +23,7 @@ class Robot(pygame.sprite.Sprite):
 
     def jump(self):
         keys = pygame.key.get_pressed()
-        if keys[pygame.K_SPACE] and self.rect.bottom >= 720:
+        if keys[pygame.K_SPACE] and self.rect.bottom >= 600:
             self.jumping = True 
 
     def gravity(self):
@@ -38,8 +38,8 @@ class Robot(pygame.sprite.Sprite):
         if not self.jumping:
             self.rect.y += 8 
 
-        if self.rect.bottom >= 720:
-            self.rect.bottom = 720
+        if self.rect.bottom >= 600:
+            self.rect.bottom = 600
 
     def increase_score(self):
         self.score += 1
@@ -47,6 +47,29 @@ class Robot(pygame.sprite.Sprite):
     def update(self):
         self.jump()
         self.gravity()
+
+
+class Ground(pygame.sprite.Sprite):
+    def __init__(self, x):
+        super().__init__()
+
+        self.image = pygame.image.load("assets/ground-1.png")
+
+        original_width, original_height = self.image.get_size()
+        new_width = int(original_width * 2)
+        new_height = int(original_height * 2)
+        self.image = pygame.transform.scale(self.image, (new_width, new_height))
+
+        self.rect = self.image.get_rect()
+        self.rect.topleft = (x, 600)
+
+    def move(self):
+        self.rect.x -= 5
+        if self.rect.right < 0:
+            self.rect.x = 1280
+
+    def update(self):
+        self.move()
 
 
 class obstacle(pygame.sprite.Sprite):
@@ -61,7 +84,7 @@ class obstacle(pygame.sprite.Sprite):
         self.image = pygame.transform.scale(self.image, (new_width, new_height))
 
         self.rect = self.image.get_rect()
-        self.rect.center = (1280, 680)
+        self.rect.center = (1280, 560)
 
         self.speed = 5
         self.scored = False
@@ -89,6 +112,7 @@ class game:
         self.alive = True
         self.player_group = pygame.sprite.GroupSingle(Robot())
         self.obstacles = pygame.sprite.Group(obstacle())
+        self.ground = pygame.sprite.Group()
         self.score = 0
 
         pygame.display.set_icon(pygame.image.load("assets/character-1.png"))
@@ -105,6 +129,7 @@ class game:
         if self.player_group and pygame.sprite.spritecollide(self.player_group.sprite, self.obstacles, False):
             self.player_group.empty()
             self.obstacles.empty()
+            self.ground.empty()
             return False
         else:
             return True
@@ -133,14 +158,21 @@ class game:
             if len(self.player_group) < 1:
                 self.player_group.add(Robot())
 
+            if len(self.ground) <= 2:
+                self.ground.add(Ground(0))
+                self.ground.add(Ground(640))
+                self.ground.add(Ground(1280))
+
             self.player_group.update()
             self.obstacles.update()
+            self.ground.update()
             self.handle_score()
             self.alive = self.handle_collision()
 
     def draw(self):
         self.screen.fill(('white'))
         if self.alive:
+            self.ground.draw(self.screen)
             self.player_group.draw(self.screen)
             self.obstacles.draw(self.screen)
 
