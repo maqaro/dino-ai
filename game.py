@@ -116,10 +116,13 @@ class Game:
         while self.running and len(self.players) > 0:
             self.clock.tick(60)
             self.handle_events()
+            if not self.running:
+                return False  # Indicate that the game was stopped
             self.update(nets, ge)
             self.draw()
 
         self.obstacles.empty()
+        return True  # Indicate that the generation completed normally
 
     def handle_collision(self, ge):
         for i, player in enumerate(self.players):
@@ -171,7 +174,7 @@ class Game:
             if 0 < distance < min_distance:
                 min_distance = distance
                 nearest_obstacle = obstacle
-        return min_distance if nearest_obstacle else 1280  #
+        return min_distance if nearest_obstacle else 1280
 
     def draw(self):
         self.screen.fill(('white'))
@@ -205,7 +208,14 @@ def run_AI(config_path: str):
     population.add_reporter(neat.StdOutReporter(True))
     population.add_reporter(neat.StatisticsReporter())
     game_instance = Game()
-    winner = population.run(game_instance.run, 50)
+
+    for _ in range(50):
+        if not game_instance.running:
+            break
+        winner = population.run(game_instance.run, 1)
+        if not game_instance.running:
+            print("\n Game was stopped")
+            break
 
 if __name__ == "__main__":
     local_dir = os.path.dirname(__file__)
