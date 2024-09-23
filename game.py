@@ -1,6 +1,7 @@
 import pygame
 import os
 import neat
+import json
 
 class Robot(pygame.sprite.Sprite):
     def __init__(self):
@@ -92,6 +93,10 @@ class Game:
         self.running = True
         self.current_generation = 0
 
+        self.generation_scores = []
+        self.generation_high_scores = []
+        self.generation_fitness = []
+
         self.players = pygame.sprite.Group()
         self.obstacles = pygame.sprite.Group(Obstacle())
         self.ground = pygame.sprite.Group()
@@ -105,7 +110,7 @@ class Game:
         self.players = pygame.sprite.Group()
         self.current_generation += 1
 
-        for genome_id, genome in genomes:
+        for _, genome in genomes:
             net = neat.nn.FeedForwardNetwork.create(genome, config)
             nets.append(net)
             player = Robot()
@@ -113,23 +118,43 @@ class Game:
             genome.fitness = 0
             ge.append(genome)
 
+        generation_scores = [] 
+        generation_fitness = []
+
         while self.running and len(self.players) > 0:
             self.clock.tick(60)
             self.handle_events()
             if not self.running:
-                return False  # Indicate that the game was stopped
+                return False
             self.update(nets, ge)
             self.draw()
 
-        self.obstacles.empty()
-        return True  # Indicate that the generation completed normally
+            for i, player in enumerate(self.players):
+                generation_scores.append(player.score)
+                generation_fitness.append(ge[i].fitness)
 
+        if generation_scores:
+            avg_score = sum(generation_scores) / len(generation_scores)
+            high_score = max(generation_scores)
+        else:
+            avg_score = 0
+            high_score = 0
+
+        self.generation_scores.append(avg_score)
+        self.generation_high_scores.append(high_score)
+        self.generation_fitness.append(sum(generation_fitness) / len(generation_fitness))
+
+        self.save_generation_data()
+
+        self.obstacles.empty()
+        return True 
+    
     def handle_collision(self, ge):
         for i, player in enumerate(self.players):
             if pygame.sprite.spritecollideany(player, self.obstacles):
                 ge[i].fitness -= 1
                 self.players.remove(player)
-
+    
     def handle_score(self, ge):
         for obstacle in self.obstacles:
             for i, player in enumerate(self.players):
@@ -137,7 +162,7 @@ class Game:
                     ge[i].fitness += 1
                     player.increase_score()
                     obstacle.scored = True
-
+    
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -175,7 +200,7 @@ class Game:
                 min_distance = distance
                 nearest_obstacle = obstacle
         return min_distance if nearest_obstacle else 1280
-
+    
     def draw(self):
         self.screen.fill(('white'))
         if len(self.players) > 0:
@@ -198,6 +223,15 @@ class Game:
             self.screen.blit(alive_count_text, alive_rect)
         pygame.display.flip()
 
+    def save_generation_data(self):
+        data = {
+            'avg_scores': self.generation_scores,
+            'high_scores': self.generation_high_scores,
+            'fitness_values': self.generation_fitness
+        }
+        with open('generation_data.json', 'w') as f:
+            json.dump(data, f)
+
 def run_AI(config_path: str):
     config = neat.config.Config(
         neat.DefaultGenome, neat.DefaultReproduction, 
@@ -209,13 +243,16 @@ def run_AI(config_path: str):
     population.add_reporter(neat.StatisticsReporter())
     game_instance = Game()
 
-    for _ in range(50):
-        if not game_instance.running:
-            break
-        winner = population.run(game_instance.run, 1)
-        if not game_instance.running:
-            print("\n Game was stopped")
-            break
+    try:
+        for _ in range(50):
+            if not game_instance.running:
+                break
+            population.run(game_instance.run, 1)
+            if not game_instance.running:
+                print("\nGame was stopped")
+                break
+    finally:
+        game_instance.save_generation_data() 
 
 if __name__ == "__main__":
     local_dir = os.path.dirname(__file__)
